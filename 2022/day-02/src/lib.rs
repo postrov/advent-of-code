@@ -8,6 +8,7 @@ enum Shape {
     Scissors,
 }
 
+// This is getting reused as both round result and desired outcome for part2
 #[derive(Clone, PartialEq, Eq)]
 enum RoundResult {
     Win,
@@ -40,11 +41,12 @@ impl FromStr for Round1 {
     type Err = &'static str;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        if s.len() != 3 {
+        let parts: Vec<&str> = s.split(' ').collect();
+        if parts.len() != 2 {
             return Err("Invalid line length");
         }
-        let action = s[0..1].parse::<Shape>()?;
-        let response = s[2..3].parse::<Shape>()?;
+        let action = parts[0].parse::<Shape>()?;
+        let response = parts[1].parse::<Shape>()?;
         Ok(Round1 { action, response })
     }
 }
@@ -125,24 +127,17 @@ impl FromStr for Round2 {
 }
 
 fn response_shape_for_round_result(action: &Shape, result: RoundResult) -> Shape {
-    if result == RoundResult::Draw {
-        return action.clone();
-    }
-
-    if result == RoundResult::Win {
-        match action {
-            Shape::Rock => Shape::Paper,
-            Shape::Paper => Shape::Scissors,
-            Shape::Scissors => Shape::Rock,
-        }
-    } else {
-        match action {
-            Shape::Rock => Shape::Scissors,
-            Shape::Paper => Shape::Rock,
-            Shape::Scissors => Shape::Paper,
-        }
+    match (action, result) {
+        (Shape::Rock, RoundResult::Win) => Shape::Paper,
+        (Shape::Rock, RoundResult::Lose) => Shape::Scissors,
+        (Shape::Paper, RoundResult::Win) => Shape::Scissors,
+        (Shape::Paper, RoundResult::Lose) => Shape::Rock,
+        (Shape::Scissors, RoundResult::Win) => Shape::Rock,
+        (Shape::Scissors, RoundResult::Lose) => Shape::Paper,
+        (_, RoundResult::Draw) => action.clone(),
     }
 }
+
 pub fn process_part2(input: &str) -> String {
     input
         .lines()
