@@ -1,0 +1,13 @@
+alias t := test
+alias w := watch
+
+# test everything
+[no-cd]
+test:
+  cargo test
+
+# watch test
+[no-cd]
+watch cmd:
+  cargo watch -q -c -x {{cmd}}
+
