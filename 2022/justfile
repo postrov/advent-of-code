@@ -1,6 +1,10 @@
 alias t := test
 alias w := watch
 
+# just new day
+day day:
+  ./new-day.sh {{day}}
+
 # test everything
 [no-cd]
 test:
