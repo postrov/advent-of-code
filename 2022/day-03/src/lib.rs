@@ -1,4 +1,5 @@
-use std::{collections::HashMap};
+#![feature(iter_array_chunks)]
+use std::collections::HashMap;
 
 fn item_value(item: &char) -> u32 {
     match *item {
@@ -58,7 +59,25 @@ fn backpack_to_item_set(line: &str) -> BitBuffer<u128> {
     item_set
 }
 
+// this assumes single bit is set
+fn rucksack_value(rucksack: BitBuffer<u128>) -> u32 {
+    rucksack.into_iter()
+        .find(|(_, b)| *b == Bit::One)
+        .map(|t| t.0 as u32 + 1)
+        .unwrap()
+
+}
 pub fn process_part2(input: &str) -> String {
+    input.lines()
+        .map(backpack_to_item_set)
+        .array_chunks::<3>()
+        .map(|[a, b, c]| a.intersection(&b).intersection(&c))
+        .map(rucksack_value)
+        .sum::<u32>()
+        .to_string()
+}
+
+pub fn process_part2_old(input: &str) -> String {
     let mut elves = ["", "", ""];
     let mut pos = 0;
     let mut sum = 0;
