@@ -53,9 +53,46 @@ pub fn process_part1(input: &str) -> String {
         .sum::<u32>()
         .to_string()
 }
+// ******************************************************************************  
+// part 2
+
+use bit_set::{Bit, BitBuffer, BitSet};
+
+fn letter_to_bit_pos(c: char) -> u8 {
+    (item_value(&c) - 1) as u8
+}
+
+fn backpack_to_item_set(line: &str) -> BitBuffer<u128> {
+    let mut item_set = BitBuffer::default();
+    line.chars()
+        .map(letter_to_bit_pos)
+        .for_each(|b| item_set.set(b));
+    item_set
+}
 
 pub fn process_part2(input: &str) -> String {
-    input.into()
+    let mut elves = ["", "", ""];
+    let mut pos = 0;
+    let mut sum = 0;
+    for line in input.lines() {
+        elves[pos] = line;
+        if pos == 2 {
+            let common_items = elves.iter()
+                .map(|line| backpack_to_item_set(line))
+                .reduce(|a, b| a.intersection(&b))
+                .unwrap();
+
+            let item_pos = common_items
+                .into_iter()
+                .find(|(_, b)| *b == Bit::One)
+                .map(|t| t.0)
+                .unwrap();
+
+            sum += item_pos as u32 + 1; 
+        }
+        pos = (pos + 1) % 3;
+    };
+    sum.to_string()
 }
 
 #[cfg(test)]
@@ -75,6 +112,6 @@ CrZsJsPPZsGzwwsLwLmpwMDw";
 
     #[test]
     fn part2_works() {
-        assert_eq!(INPUT, process_part2(INPUT));
+        assert_eq!("70", process_part2(INPUT));
     }
 }
