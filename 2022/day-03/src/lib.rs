@@ -1,4 +1,4 @@
-use std::{collections::HashMap};
+use std::collections::{HashMap, HashSet};
 
 fn item_value(item: &char) -> u32 {
     match *item {
@@ -44,18 +44,13 @@ pub fn process_part1(input: &str) -> String {
 // ******************************************************************************  
 // part 2
 
-use bit_set::{Bit, BitBuffer, BitSet};
-
-fn letter_to_bit_pos(c: char) -> u8 {
-    (item_value(&c) - 1) as u8
+fn backpack_to_item_set(line: &str) -> HashSet<char> {
+    line.chars().collect::<HashSet<char>>()
 }
 
-fn backpack_to_item_set(line: &str) -> BitBuffer<u128> {
-    let mut item_set = BitBuffer::default();
-    line.chars()
-        .map(letter_to_bit_pos)
-        .for_each(|b| item_set.set(b));
-    item_set
+fn intersection(a: HashSet<char>, b: HashSet<char>) -> HashSet<char> {
+   a.intersection(&b).copied()
+        .collect::<HashSet<char>>()
 }
 
 pub fn process_part2(input: &str) -> String {
@@ -67,16 +62,15 @@ pub fn process_part2(input: &str) -> String {
         if pos == 2 {
             let common_items = elves.iter()
                 .map(|line| backpack_to_item_set(line))
-                .reduce(|a, b| a.intersection(&b))
+                .reduce(intersection)
                 .unwrap();
 
             let item_pos = common_items
-                .into_iter()
-                .find(|(_, b)| *b == Bit::One)
-                .map(|t| t.0)
+                .iter()
+                .next()
                 .unwrap();
 
-            sum += item_pos as u32 + 1; 
+            sum += item_value(item_pos); 
         }
         pos = (pos + 1) % 3;
     };
