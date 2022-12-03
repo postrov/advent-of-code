@@ -1,22 +1,11 @@
-use std::collections::HashMap;
-
-
-#[allow(unused)]
-struct Rucksack {
-    ruck: HashMap<char, u32>,
-    sack: HashMap<char, u32>,
-}
-
+use std::{collections::HashMap};
 
 fn item_value(item: &char) -> u32 {
-    let v = *item as u32;
-    let (base, base_value) = if item.is_uppercase() {
-        ('A' as u32, 27)
-    }
-    else {
-        ('a' as u32, 1)
-    };
-    v - base + base_value
+    match *item {
+        'a'..='z' => *item as u32 - 'a' as u32 + 1,
+        'A'..='Z' => *item as u32 - 'A' as u32 + 27,
+        _ => panic!("Wrong character {item}"),
+    } 
 }
 
 #[cfg(test)]
@@ -26,7 +15,6 @@ fn item_value_works() {
     assert_eq!(26, item_value(&'z'));
     assert_eq!(27, item_value(&'A'));
     assert_eq!(52, item_value(&'Z'));
-
 }
 
 pub fn process_part1(input: &str) -> String {
