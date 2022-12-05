@@ -1,3 +1,4 @@
+mod nom_parser;
 mod parser;
 mod types;
 
@@ -8,7 +9,7 @@ fn top_of_stacks(stacks: Stacks) -> String {
     stacks.iter().flat_map(|s| s.last()).collect::<String>()
 }
 
-pub fn process_part1(input: &str) -> String {
+pub fn process_part1_own_parser(input: &str) -> String {
     let mut lines = input.lines();
     let mut stacks = parse_stacks(&mut lines);
 
@@ -24,20 +25,51 @@ pub fn process_part1(input: &str) -> String {
     top_of_stacks(stacks)
 }
 
-pub fn process_part2(input: &str) -> String {
-    let mut lines = input.lines();
-    let mut stacks = parse_stacks(&mut lines);
+pub fn process_part1_nom_parser(input: &str) -> String {
+    let (input, mut stacks) = nom_parser::parse_stacks(input).expect("error parsing crates");
+    let (_, moves) = nom_parser::parse_moves(input).expect("error parsing moves");
 
-    lines.for_each(|line| {
-        let m = parse_move(line);
-        let from = &mut stacks[m.from - 1];
-        let mut drained = from.drain((from.len() - m.count)..).collect::<Vec<char>>();
-        let to = &mut stacks[m.to - 1];
+    for m in moves {
+        let from = &mut stacks[m.from];
+        let mut drained = from.drain(from.len() - m.count..).collect::<Vec<char>>();
+        drained.reverse();
+        let to = &mut stacks[m.to];
         to.append(&mut drained);
-    });
-
+    }
     top_of_stacks(stacks)
 }
+
+#[allow(non_upper_case_globals)]
+pub const process_part1: fn(&str) -> String = process_part1_nom_parser;
+
+pub fn process_part2_own_parser(input: &str) -> String {
+    let (input, mut stacks) = nom_parser::parse_stacks(input).expect("error parsing crates");
+    let (_, moves) = nom_parser::parse_moves(input).expect("error parsing moves");
+
+    for m in moves {
+        let from = &mut stacks[m.from];
+        let mut drained = from.drain(from.len() - m.count..).collect::<Vec<char>>();
+        let to = &mut stacks[m.to];
+        to.append(&mut drained);
+    }
+    top_of_stacks(stacks)
+}
+
+pub fn process_part2_nom_parser(input: &str) -> String {
+    let (input, mut stacks) = nom_parser::parse_stacks(input).expect("error parsing crates");
+    let (_, moves) = nom_parser::parse_moves(input).expect("error parsing moves");
+
+    for m in moves {
+        let from = &mut stacks[m.from];
+        let mut drained = from.drain(from.len() - m.count..).collect::<Vec<char>>();
+        let to = &mut stacks[m.to];
+        to.append(&mut drained);
+    }
+    top_of_stacks(stacks)
+}
+
+#[allow(non_upper_case_globals)]
+pub const process_part2: fn(&str) -> String = process_part2_nom_parser;
 
 #[cfg(test)]
 mod tests {
