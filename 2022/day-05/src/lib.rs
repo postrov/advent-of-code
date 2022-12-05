@@ -88,12 +88,11 @@ pub fn process_part2(input: &str) -> String {
 
     lines.for_each(|line| {
         let m = parse_move(line);
-        let from_stack = &mut stacks[m.from -1];
-        let from_len = from_stack.len();
-        let mut drained = from_stack.drain((from_len - m.count)..)
+        let from = &mut stacks[m.from -1];
+        let mut drained = from.drain((from.len() - m.count)..)
             .collect::<Vec<char>>();
-        let to_stack = &mut stacks[m.to - 1];
-        to_stack.append(&mut drained);
+        let to = &mut stacks[m.to - 1];
+        to.append(&mut drained);
     });
 
     top_of_stacks(stacks)
