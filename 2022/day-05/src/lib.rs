@@ -1,71 +1,11 @@
-use std::str::Lines;
+mod parser;
+mod types;
 
-type Stacks = Vec<Vec<char>>;
-
-struct Move {
-    count: usize,
-    from: usize,
-    to: usize,
-}
-
-fn parse_crate_line(line: &str, stacks: &mut Stacks) {
-    let mut chars = line.chars();
-    (0..stacks.len())
-        .for_each(|i| {
-            let item = chars.nth(1).expect("bad crate input");
-            if item.is_uppercase() { // ignoring line of stack indices
-                stacks[i].push(item);
-            }
-            chars.nth(1);
-        });
-} 
-fn parse_stacks(lines: &mut Lines) -> Stacks {
-    let mut stacks = Vec::new();
-    if let Some(line) = lines.next() {
-        let num_stacks = (line.len() + 1) / 4;
-        (0..num_stacks).for_each(|_| {
-            stacks.push(Vec::new());
-        });
-        parse_crate_line(line, &mut stacks);
-    }
-    for line in lines {
-        if line.is_empty() {
-            break;
-        }
-        parse_crate_line(line, &mut stacks);
-    }
-    (0..stacks.len())
-        .for_each(|i| stacks[i].reverse());
-    stacks
-}
-
-fn parse_move(line: &str) -> Move {
-    let parts = line.split(' ')
-        .collect::<Vec<&str>>();
-    let values = [1, 3, 5].map(|idx| parts[idx]
-        .parse::<usize>()
-        .expect("bad move input"));
-    Move {
-        count: values[0],
-        from: values[1],
-        to: values[2],
-    }
-}
-
-#[test]
-fn parse_move_works() {
-    let input = "move 13 from 3 to 6";
-    let m = parse_move(input);
-    assert_eq!(13, m.count);
-    assert_eq!(3, m.from);
-    assert_eq!(6, m.to);
-}
+use crate::parser::{parse_move, parse_stacks};
+use crate::types::Stacks;
 
 fn top_of_stacks(stacks: Stacks) -> String {
-    stacks
-        .iter()
-        .flat_map(|s| s.last())
-        .collect::<String>()
+    stacks.iter().flat_map(|s| s.last()).collect::<String>()
 }
 
 pub fn process_part1(input: &str) -> String {
@@ -75,10 +15,11 @@ pub fn process_part1(input: &str) -> String {
     lines.for_each(|line| {
         let m = parse_move(line);
         (0..m.count).for_each(|_| {
-            let item = stacks[m.from - 1].pop().expect("bad move sequence, move from empty stack");
+            let item = stacks[m.from - 1]
+                .pop()
+                .expect("bad move sequence, move from empty stack");
             stacks[m.to - 1].push(item);
         })
-
     });
     top_of_stacks(stacks)
 }
@@ -89,9 +30,8 @@ pub fn process_part2(input: &str) -> String {
 
     lines.for_each(|line| {
         let m = parse_move(line);
-        let from = &mut stacks[m.from -1];
-        let mut drained = from.drain((from.len() - m.count)..)
-            .collect::<Vec<char>>();
+        let from = &mut stacks[m.from - 1];
+        let mut drained = from.drain((from.len() - m.count)..).collect::<Vec<char>>();
         let to = &mut stacks[m.to - 1];
         to.append(&mut drained);
     });
