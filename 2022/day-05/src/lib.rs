@@ -1,9 +1,6 @@
 use std::str::Lines;
 
-struct Stacks1 {
-    // 0 -> first stack (last vec item is on top of the stack)
-    stacks: Vec<Vec<char>>,
-}
+type Stacks = Vec<Vec<char>>;
 
 struct Move {
     count: usize,
@@ -11,17 +8,15 @@ struct Move {
     to: usize,
 }
 
-fn parse_stacks(lines: &mut Lines) -> Stacks1 {
+fn parse_stacks(lines: &mut Lines) -> Stacks {
     let mut first = true;
-    let mut result = Stacks1 {
-        stacks: Vec::new(),
-    };
+    let mut stacks = Vec::new();
     let mut num_stacks = 0;
     for line in lines {
         if first {
             num_stacks = (line.len() + 1) / 4;
             (0..num_stacks).for_each(|_| {
-                result.stacks.push(Vec::new());
+                stacks.push(Vec::new());
             });
             first = false;
         }
@@ -33,14 +28,14 @@ fn parse_stacks(lines: &mut Lines) -> Stacks1 {
             .for_each(|i| {
                 let item = chars.nth(1).unwrap();
                 if item.is_uppercase() {
-                    result.stacks[i].push(item);
+                    stacks[i].push(item);
                 }
                 chars.nth(1);
             })
     }
     (0..num_stacks)
-        .for_each(|i| result.stacks[i].reverse());
-    result
+        .for_each(|i| stacks[i].reverse());
+    stacks
 }
 
 fn parse_move(line: &str) -> Move {
@@ -62,13 +57,13 @@ fn parse_move_works() {
     assert_eq!(6, m.to);
 }
 
-fn top_of_stacks(stacks: Stacks1) -> String {
+fn top_of_stacks(stacks: Stacks) -> String {
     stacks
-        .stacks
         .iter()
         .flat_map(|s| s.last())
         .collect::<String>()
 }
+
 pub fn process_part1(input: &str) -> String {
     let mut lines = input.lines();
     let mut stacks = parse_stacks(&mut lines);
@@ -76,8 +71,8 @@ pub fn process_part1(input: &str) -> String {
     lines.for_each(|line| {
         let m = parse_move(line);
         (0..m.count).for_each(|_| {
-            let item = stacks.stacks[m.from - 1].pop().unwrap();
-            stacks.stacks[m.to - 1].push(item);
+            let item = stacks[m.from - 1].pop().unwrap();
+            stacks[m.to - 1].push(item);
         })
 
     });
@@ -88,28 +83,16 @@ pub fn process_part2(input: &str) -> String {
     let mut lines = input.lines();
     let mut stacks = parse_stacks(&mut lines);
 
-    // lines.for_each(|line| {
-    //     let m = parse_move(line);
-    //     let from_stack = stacks.stacks[m.from -1];
-    //     let to_stack = stacks.stacks[m.to - 1];
-    //     let items_to_move = from_stack[from_stack.len() - m.count..].to_vec();
-    //     to_stack.append(&mut items_to_move);
-    //     // from_stack.resize(from_stack.len() - m.count, '_');
-    //     // (0..m.count).for_each(|_| {
-    //     //     let item = stacks.stacks[m.from - 1].pop().unwrap();
-    //     //     stacks.stacks[m.to - 1].push(item);
-    //     // })
-    // });
     lines.for_each(|line| {
         let m = parse_move(line);
-        let mut tmp = Vec::with_capacity(m.count);
-        (0..m.count).for_each(|_| {
-            let item = stacks.stacks[m.from - 1].pop().unwrap();
-            tmp.push(item);
-        });
-        tmp.reverse();
-        stacks.stacks[m.to - 1].append(&mut tmp);
+        let from_stack = &mut stacks[m.from -1];
+        let from_len = from_stack.len();
+        let mut drained = from_stack.drain((from_len - m.count)..)
+            .collect::<Vec<char>>();
+        let to_stack = &mut stacks[m.to - 1];
+        to_stack.append(&mut drained);
     });
+
     top_of_stacks(stacks)
 }
 
