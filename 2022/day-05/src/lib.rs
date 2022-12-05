@@ -26,7 +26,7 @@ fn parse_stacks(lines: &mut Lines) -> Stacks {
         let mut chars = line.chars();
         (0..num_stacks)
             .for_each(|i| {
-                let item = chars.nth(1).unwrap();
+                let item = chars.nth(1).expect("bad crate input");
                 if item.is_uppercase() {
                     stacks[i].push(item);
                 }
@@ -41,10 +41,13 @@ fn parse_stacks(lines: &mut Lines) -> Stacks {
 fn parse_move(line: &str) -> Move {
     let parts = line.split(' ')
         .collect::<Vec<&str>>();
+    let values = [1, 3, 5].map(|idx| parts[idx]
+        .parse::<usize>()
+        .expect("bad move input"));
     Move {
-        count: parts[1].parse::<usize>().unwrap(),
-        from: parts[3].parse::<usize>().unwrap(),
-        to: parts[5].parse::<usize>().unwrap(),
+        count: values[0],
+        from: values[1],
+        to: values[2],
     }
 }
 
@@ -71,7 +74,7 @@ pub fn process_part1(input: &str) -> String {
     lines.for_each(|line| {
         let m = parse_move(line);
         (0..m.count).for_each(|_| {
-            let item = stacks[m.from - 1].pop().unwrap();
+            let item = stacks[m.from - 1].pop().expect("bad move sequence, move from empty stack");
             stacks[m.to - 1].push(item);
         })
 
