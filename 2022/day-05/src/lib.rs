@@ -31,10 +31,10 @@ pub fn process_part1_nom_parser(input: &str) -> String {
 
     for m in moves {
         let from = &mut stacks[m.from];
-        let mut drained = from.drain(from.len() - m.count..).collect::<Vec<char>>();
-        drained.reverse();
+        let mut picked_up = from.split_off(from.len() - m.count);
+        picked_up.reverse();
         let to = &mut stacks[m.to];
-        to.append(&mut drained);
+        to.append(&mut picked_up);
     }
     top_of_stacks(stacks)
 }
@@ -48,9 +48,9 @@ pub fn process_part2_own_parser(input: &str) -> String {
 
     for m in moves {
         let from = &mut stacks[m.from];
-        let mut drained = from.drain(from.len() - m.count..).collect::<Vec<char>>();
+        let mut picked_up = from.split_off(from.len() - m.count);
         let to = &mut stacks[m.to];
-        to.append(&mut drained);
+        to.append(&mut picked_up);
     }
     top_of_stacks(stacks)
 }
@@ -61,9 +61,9 @@ pub fn process_part2_nom_parser(input: &str) -> String {
 
     for m in moves {
         let from = &mut stacks[m.from];
-        let mut drained = from.drain(from.len() - m.count..).collect::<Vec<char>>();
+        let mut picked_up = from.split_off(from.len() - m.count);
         let to = &mut stacks[m.to];
-        to.append(&mut drained);
+        to.append(&mut picked_up);
     }
     top_of_stacks(stacks)
 }
