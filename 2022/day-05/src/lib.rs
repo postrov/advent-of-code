@@ -8,32 +8,33 @@ struct Move {
     to: usize,
 }
 
+fn parse_crate_line(line: &str, stacks: &mut Stacks) {
+    let mut chars = line.chars();
+    (0..stacks.len())
+        .for_each(|i| {
+            let item = chars.nth(1).expect("bad crate input");
+            if item.is_uppercase() { // ignoring line of stack indices
+                stacks[i].push(item);
+            }
+            chars.nth(1);
+        });
+} 
 fn parse_stacks(lines: &mut Lines) -> Stacks {
-    let mut first = true;
     let mut stacks = Vec::new();
-    let mut num_stacks = 0;
+    if let Some(line) = lines.next() {
+        let num_stacks = (line.len() + 1) / 4;
+        (0..num_stacks).for_each(|_| {
+            stacks.push(Vec::new());
+        });
+        parse_crate_line(line, &mut stacks);
+    }
     for line in lines {
-        if first {
-            num_stacks = (line.len() + 1) / 4;
-            (0..num_stacks).for_each(|_| {
-                stacks.push(Vec::new());
-            });
-            first = false;
-        }
         if line.is_empty() {
             break;
         }
-        let mut chars = line.chars();
-        (0..num_stacks)
-            .for_each(|i| {
-                let item = chars.nth(1).expect("bad crate input");
-                if item.is_uppercase() {
-                    stacks[i].push(item);
-                }
-                chars.nth(1);
-            })
+        parse_crate_line(line, &mut stacks);
     }
-    (0..num_stacks)
+    (0..stacks.len())
         .for_each(|i| stacks[i].reverse());
     stacks
 }
@@ -104,7 +105,7 @@ mod tests {
     const INPUT: &str = "    [D]    
 [N] [C]    
 [Z] [M] [P]
- 1   2   3 
+1   2   3 
 
 move 1 from 2 to 1
 move 3 from 1 to 3
