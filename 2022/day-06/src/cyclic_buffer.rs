@@ -64,18 +64,18 @@ impl<'a, T, const N: usize> Iterator for CyclicBufferIter<'a, T, N> {
 #[cfg(test)]
 #[test]
 fn cyclic_buffer_works() {
-    let init = [1, 3, 3, 4];
+    let init = [1, 2, 3, 4];
     let mut buf = CyclicBuffer::<i32, 4>::new(init);
     buf.push(5);
     buf.push(6);
     let v = buf.into_iter()
         .copied()
         .collect::<Vec<i32>>();
-    println!("{:?}", v);
+    assert_eq!(vec![3, 4, 5, 6], v);
     // todo: why does it allow this push, shouldn't buf be consumed by to_iter()?
     buf.push(7);
     let v = buf.into_iter()
         .copied()
         .collect::<Vec<i32>>();
-    println!("{:?}", v);
+    assert_eq!(vec![4, 5, 6, 7], v);
 }
