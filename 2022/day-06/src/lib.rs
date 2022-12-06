@@ -3,7 +3,8 @@ mod cyclic_buffer;
 use std::collections::HashSet;
 use crate::cyclic_buffer::CyclicBuffer;
 
-
+// todo: this is sufficient, but quite naive implementation. By holding previous n-1 information,
+// this check could be done more efficiently
 fn is_unique<const N: usize>(window: &CyclicBuffer<char, N>) -> bool {
     let unique_signals = window.into_iter()
         .copied()
