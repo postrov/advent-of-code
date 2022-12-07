@@ -38,8 +38,19 @@ pub fn process_part1(input: &str) -> String {
 }
 
 pub fn process_part2(input: &str) -> String {
-    let pos = get_start_signal_position::<14>(input);
-    pos.to_string()
+    // let pos = get_start_signal_position::<14>(input);
+    // pos.to_string()
+    let window_size = 14;
+    let chars = input.chars().collect::<Vec<char>>();
+
+    let indexed_window = chars.windows(window_size)
+        .enumerate()
+        .find(|(_i, win)| {
+            let s = win.iter().collect::<HashSet<&char>>();
+            s.len() == window_size
+        })
+        .unwrap();
+    (indexed_window.0 + window_size).to_string()
 }
 
 
