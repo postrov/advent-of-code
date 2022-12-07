@@ -1,18 +1,18 @@
 #[derive(Debug)]
-pub enum Path {
+pub enum Path<'a> {
     Root,
     Up,
-    Name(String),
+    Name(&'a str),
 }
 
 #[derive(Debug)]
-pub enum LsOutput {
-    File(String, usize),
-    Dir(String),
+pub enum LsOutput<'a> {
+    File(&'a str, usize),
+    Dir(&'a str),
 }
 
 #[derive(Debug)]
-pub enum Cmd {
-    Ls(Vec<LsOutput>),
-    Cd(Path)
+pub enum Cmd<'a> {
+    Ls(Vec<LsOutput<'a>>),
+    Cd(Path<'a>)
 }

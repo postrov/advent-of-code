@@ -10,7 +10,7 @@ fn calculate_dir_sizes(input: &str) -> BTreeMap<String, usize> {
     let (_, cmds) = parse_terminal(input).expect("failed to parse input");
     let mut dir_sizes = BTreeMap::new();
     let mut dir_lsed = BTreeSet::<String>::new();
-    let mut current_dir =  vec!["/".to_string()];
+    let mut current_dir =  vec!["/"];
  
     for cmd in cmds {
         match cmd {

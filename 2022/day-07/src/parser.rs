@@ -18,7 +18,7 @@ fn parse_cmd_cd(input: &str) -> IResult<&str, Cmd> {
     let path = match path_str {
         "/" => Path::Root,
         ".." => Path::Up,
-        name => Path::Name(name.to_string()),
+        name => Path::Name(name),
     };
     Ok((input, Cmd::Cd(path)))
 }
@@ -42,12 +42,12 @@ fn parse_cmd_ls_out_line(input: &str) -> IResult<&str, LsOutput> {
 fn parse_cmd_ls_out_file(input: &str) -> IResult<&str, LsOutput> {
     let (input, size) = complete::u32(input)?;
     let (input, name) = preceded(space1, not_line_ending)(input)?;
-    Ok((input, LsOutput::File(name.into(), size as usize)))
+    Ok((input, LsOutput::File(name, size as usize)))
 }
 
 fn parse_cmd_ls_out_dir(input: &str) -> IResult<&str, LsOutput> {
     let (input, _) = tag("dir ")(input)?;
     let (input, name) = alpha1(input)?;
-    Ok((input, LsOutput::Dir(name.into())))
+    Ok((input, LsOutput::Dir(name)))
 }
 
