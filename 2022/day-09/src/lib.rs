@@ -69,9 +69,11 @@ pub fn process_part1(input: &str) -> String {
             let new_h = calculate_step(state.h, dir);
             let new_t = calculate_catch_up(new_h, state.t);
             state.trail.insert(new_t);
-            state.h = new_h;
-            state.t = new_t;
-            state
+            State {
+                h: new_h,
+                t: new_t,
+                trail: state.trail,
+            }
         }).trail
         .len()
         .to_string()
@@ -99,28 +101,20 @@ fn calculate_catch_up(h: Pos, t: Pos) -> Pos {
 
 pub fn process_part2(input: &str) -> String {
     const N: usize = 10;
-    struct State {
-        rope: [Pos; N],
-        trail: BTreeSet<Pos>,
-    }
-    let state = State {
-        rope: [(0, 0); N],
-        trail: BTreeSet::new(),
-    };
+    let mut rope = [(0, 0); N];
+    let mut trail: BTreeSet<Pos> = BTreeSet::new();
     let (_input, moves) = parse_moves(input).unwrap();
 
     moves.iter()
         .flat_map(|Move {dir, dist}| repeat(dir).take(*dist as usize))
-        .fold(state, |mut state, dir| {
-            let mut new_rope = [(0, 0); N];
-            new_rope[0] = calculate_step(state.rope[0], dir);
+        .for_each(|dir| {
+            rope[0] = calculate_step(rope[0], dir);
             (1..N).for_each(|i| {
-                new_rope[i] = calculate_catch_up(new_rope[i - 1], state.rope[i]);
+                rope[i] = calculate_catch_up(rope[i - 1], rope[i]);
             });
-            state.trail.insert(new_rope[N - 1]);
-            state.rope = new_rope;
-            state
-        }).trail
+            trail.insert(rope[N - 1]);
+        });
+        trail
         .len()
         .to_string()
 }
