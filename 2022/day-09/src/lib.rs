@@ -31,7 +31,7 @@ fn parse_move(input: &str) -> IResult<&str, Move> {
 }
 
 fn calculate_step(pos: Pos, m: Move) -> Pos {
-Match m {
+    match m {
         Move::Up(len) => (pos.0, pos.1 + len),
         Move::Down(len) => (pos.0, pos.1 - len),
         Move::Left(len) => (pos.0 - len, pos.1),
@@ -39,12 +39,14 @@ Match m {
     }
 }
 
+
 pub fn process_part1(input: &str) -> String {
     let mut h = (0, 0);
     let mut t = (0, 0);
     let mut trail = BTreeSet::<Pos>::new();
 
     let moves = parse_moves(input).unwrap();
+
     input.into()
 }
 
