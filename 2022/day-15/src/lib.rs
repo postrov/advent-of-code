@@ -1,5 +1,5 @@
 
-use std::{collections::BTreeSet, ops::{Range}};
+use std::{collections::BTreeSet, ops::Range};
 
 use nom::{IResult, multi::separated_list1, character::complete::{line_ending, self}, sequence::{preceded, separated_pair},  bytes::complete::tag, Parser};
 
@@ -27,7 +27,6 @@ pub fn merge_ranges_in_place<T: Ord + Copy>(ranges: &mut Vec<Range<T>>) {
         }
     }
 }
-
 
 fn pos(input: &str) -> IResult<&str, Pos> {
     let (input, pos) = 
