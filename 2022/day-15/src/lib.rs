@@ -79,12 +79,27 @@ fn part1(input: &str, target_row: i32) -> String {
 }
 
 pub fn process_part1(input: &str) -> String {
-    const TARGET_ROW: i32 = 2000000;
+    const TARGET_ROW: i32 = 2_000_000;
     part1(input, TARGET_ROW)
 }
 
+fn part2(input: &str, coord_upper_bound: i32) -> String {
+    let (_input, readings) = readings(input).unwrap();
+    for x in 0..=coord_upper_bound {
+        for y in 0..=coord_upper_bound {
+            let target = Pos(x, y);
+            let res = readings.iter()
+                .all(|reading| distance(&target, &reading.sensor) > reading.distance);
+            if res {
+                return (target.0 * 4_000_000 + target.1).to_string();
+            }
+        }
+    }
+    "dupa".into()
+}
+
 pub fn process_part2(input: &str) -> String {
-    input.into()
+    part2(input, 4_000_000)
 }
 
 #[cfg(test)]
@@ -111,8 +126,7 @@ Sensor at x=20, y=1: closest beacon is at x=15, y=3";
     }
 
     #[test]
-    #[ignore = "not implemented"]
     fn part2_works() {
-        assert_eq!("works", process_part2(INPUT));
+        assert_eq!("56000011", part2(INPUT, 20));
     }
 }
