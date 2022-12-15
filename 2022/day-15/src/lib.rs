@@ -1,29 +1,46 @@
-use std::collections::BTreeSet;
+
+use std::{collections::BTreeSet, ops::{Range}};
 
 use nom::{IResult, multi::separated_list1, character::complete::{line_ending, self}, sequence::{preceded, separated_pair},  bytes::complete::tag, Parser};
 
 #[derive(Debug)]
-struct Pos(i32, i32);
+struct Pos(i64, i64);
 
 #[derive(Debug)]
 struct Reading {
     sensor: Pos,
     beacon: Pos,
-    distance: i32,
+    distance: i64,
 }
+
+pub fn merge_ranges_in_place<T: Ord + Copy>(ranges: &mut Vec<Range<T>>) {
+    ranges.sort_by_key(|r| r.start);
+    let mut i = 0;
+    while i < ranges.len() - 1 {
+        let r1 = &ranges[i];
+        let r2 = &ranges[i + 1];
+        if r1.end >= r2.start {
+            ranges[i] = r1.start..r1.end.max(r2.end);
+            ranges.remove(i + 1);
+        } else {
+            i += 1;
+        }
+    }
+}
+
 
 fn pos(input: &str) -> IResult<&str, Pos> {
     let (input, pos) = 
     separated_pair(
-        preceded(tag("x="), complete::i32),
+        preceded(tag("x="), complete::i64),
         tag(", "),
-        preceded(tag("y="), complete::i32)
+        preceded(tag("y="), complete::i64)
     )(input)?;
   
     Ok((input, Pos(pos.0, pos.1)))
 }
 
-fn distance(pos1: &Pos, pos2: &Pos) -> i32 {
+fn distance(pos1: &Pos, pos2: &Pos) -> i64 {
     (pos1.0 - pos2.0).abs() + (pos1.1 - pos2.1).abs()
 }
 
@@ -47,55 +64,67 @@ fn readings(input: &str) -> IResult<&str, Vec<Reading>> {
     Ok((input, readings))
 }
 
-fn part1(input: &str, target_row: i32) -> String {
-    let (_input, readings) = readings(input).unwrap();
-
-    let mut no_beacon_positions = readings.iter()
-        .map(|reading| {
+fn no_beacon_ranges(readings: &[Reading], target_row: i64) -> Vec<Range<i64>> {
+    let mut no_beacon_ranges = readings.iter()
+        .filter_map(|reading| {
             let y_dist = (reading.sensor.1 - target_row).abs();
             let x_span = reading.distance - y_dist;
             if x_span >= 0 {
                 let x = reading.sensor.0;
-                (x - x_span)..=(x + x_span)
+                Some((x - x_span)..(x + x_span + 1))
             } else {
-                0..=-1
+                None
             }
-        })
-        .fold(BTreeSet::<i32>::new(), |mut s, range| {
-            range.for_each(|x| {s.insert(x);} );
-            s
-        });
+        }).collect::<Vec<Range<i64>>>();
 
-    readings.iter()
+    merge_ranges_in_place(&mut no_beacon_ranges);
+    no_beacon_ranges
+}
+
+fn part1(input: &str, target_row: i64) -> String {
+    let (_input, readings) = readings(input).unwrap();
+
+    let no_beacon_ranges = no_beacon_ranges(&readings, target_row);
+
+    let beacons_on_row: BTreeSet<i64> = readings.iter()
         .map(|reading| &reading.beacon)
         .filter(|beacon| beacon.1 == target_row)
-        .for_each(|beacon| {
-            no_beacon_positions.remove(&beacon.0);
-        });
+        .map(|beacon| beacon.0)
+        .collect();
 
-    no_beacon_positions
-        .len()
+    let no_beacons_count = no_beacon_ranges.iter()
+        .fold(0, |acc, range| acc + range.end - range.start);
+
+
+    let beacons_in_range = beacons_on_row.iter()
+        .filter(|x| no_beacon_ranges.iter().any(|range| range.contains(x)))
+        .count() as i64;
+
+    (no_beacons_count - beacons_in_range)
         .to_string()
 }
 
 pub fn process_part1(input: &str) -> String {
-    const TARGET_ROW: i32 = 2_000_000;
+    const TARGET_ROW: i64 = 2_000_000;
     part1(input, TARGET_ROW)
 }
 
-fn part2(input: &str, coord_upper_bound: i32) -> String {
+fn part2(input: &str, coord_upper_bound: i64) -> String {
     let (_input, readings) = readings(input).unwrap();
-    for x in 0..=coord_upper_bound {
-        for y in 0..=coord_upper_bound {
-            let target = Pos(x, y);
-            let res = readings.iter()
-                .all(|reading| distance(&target, &reading.sensor) > reading.distance);
-            if res {
-                return (target.0 * 4_000_000 + target.1).to_string();
-            }
+    let test_range = 0..=coord_upper_bound;
+    // todo: could run below in parallel
+    for y in test_range.clone() {
+        let no_beacon_ranges = no_beacon_ranges(&readings, y);
+        let found = no_beacon_ranges.iter()
+            .flat_map(|r| [r.start - 1, r.end])
+            .find(|x| test_range.contains(x));
+
+        if let Some(x) = found {
+            return (x * 4_000_000 + y).to_string();
         }
     }
-    "dupa".into()
+
+    panic!("not found");
 }
 
 pub fn process_part2(input: &str) -> String {
