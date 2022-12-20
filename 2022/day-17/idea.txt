@@ -1,0 +1,8 @@
+* maintain a cache of entries made just after reset: (jet idx, shape) -> offset, main loop idx
+* the second time we try to insert entry, we can calculate period offset value and period length (from main loop idx)
+* just add period_offset_value * (iter_max - current_iter) / period_length and increase main loop idx accordingly
+* finish loop normally
+
+alternatively: (jet idx, last row value, shape idx) -> offset, main loop idx
+
+
