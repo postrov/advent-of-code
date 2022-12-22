@@ -1,5 +1,142 @@
+use std::collections::{BTreeMap, HashMap};
+
+use nom::{IResult, sequence::{delimited, preceded, tuple}, character::complete::{self, alpha1, line_ending}, bytes::complete::tag, multi::separated_list1,  branch::alt};
+use petgraph::{prelude::DiGraphMap, algo::dijkstra};
+use itertools::Itertools;
+
+#[derive(Debug)]
+struct Node<'a> {
+    name: &'a str,
+    rate: u32,
+    tunnels: Vec<&'a str>,
+}
+
+fn node(input: &str) -> IResult<&str, Node> {
+    let (input, name) = delimited(tag("Valve "), alpha1, tag(" has flow rate="))(input)?;
+    let (input, rate) = complete::u32(input)?;
+    let (input, tunnels) = preceded(
+        tuple((
+            tag("; "),
+            alt((tag("tunnels lead"), tag("tunnel leads"))),
+            alt((tag(" to valve "), tag(" to valves "))),
+        )),
+        separated_list1(tag(", "), alpha1)
+    )(input)?;
+
+    Ok((input, 
+        Node {
+            name,
+            rate,
+            tunnels,
+        }))
+}
+
+type Vertex<'a> = (&'a str, u32);
+
 pub fn process_part1(input: &str) -> String {
-    input.into()
+    let (_input, node_list) = separated_list1(line_ending, node)(input).unwrap();
+    let nodes: BTreeMap<&str, &Node> = node_list.iter()
+        .map(|n| (n.name, n))
+        .collect(); 
+
+    let (pos_vertices, zero_vertices): (Vec<Vertex>, Vec<Vertex>) = node_list.iter()
+        .map(|n| (n.name, n.rate))
+        .partition(|n| n.1 > 0);
+
+    let start = nodes.get("AA")
+        .map(|n| (n.name, n.rate))
+        .unwrap();
+
+    let edges: Vec<(Vertex, Vertex)> = node_list.iter()
+        .flat_map(|n| {
+            n.tunnels.iter()
+                .map(|&m_name| {
+                    let m = nodes.get(m_name).unwrap();
+                    (
+                        (n.name, n.rate),
+                        (m_name, m.rate)
+                    )
+                })
+        })
+        .collect();
+
+    let graph = DiGraphMap::<(&str, u32), ()>::from_edges(&edges);
+
+    let sources = if start.1 > 0 {
+        pos_vertices.clone()
+    } else {
+        let mut start_and_pos = vec![start];
+        start_and_pos.append(&mut pos_vertices.clone());
+        start_and_pos
+    };
+    let mut dist: HashMap<Vertex, HashMap<Vertex, i32>> = HashMap::new();
+
+    sources.iter().for_each(|s| {
+        let mut res = dijkstra(
+            &graph,
+            start,
+            None,
+            |_| 1,
+        );
+
+        zero_vertices.iter()
+            .for_each(|v| {
+                res.remove(v);
+            });
+        dist.insert(*s, res);
+    });
+ 
+            {
+            let p = vec![&("DD", 20), &("BB", 13), &("JJ", 21), &("HH", 22), &("EE", 3), &("CC", 2)];
+            let mut sum = 0;
+            let mut total_rate = 0;
+            let mut pi = p.iter();
+            let mut cur_pos = start;
+            let mut action: Option<(i32, Vertex)> = None; // action is move to action.1 and unlock valve
+            for t in 1..=30 {
+                if action.is_none() {
+                    action = pi.next()
+                        .map(|&v| {
+                            let move_time = *dist
+                                .get(&cur_pos)
+                                .and_then(|d| d.get(v))
+                                .unwrap();
+                            (move_time, *v)
+                        });
+                }
+
+                println!("=== Minute {}", t);
+                println!("Releasing {} pressure", total_rate);
+                sum += total_rate;
+                match action {
+                    Some((0, v)) => {
+                        println!("You open valve: {}", v.0);
+                        cur_pos = v;
+                        total_rate += v.1;
+                        action = Some((-1, v));
+                    },
+                    Some((-1, v)) => {
+                        println!("Valve {} is open", v.0);
+                        // total_rate += v.1;
+                        action = None;
+                    },
+                    Some((move_time, v)) => {
+                        println!("Keep moving to valve {}, {} left", v.0, move_time);
+                        action = Some((move_time - 1, v));
+                    },
+                    None => {
+
+                    }
+                };
+            }
+            println!("sum: {}", sum);
+            // sum
+    }
+        // })
+        // .max()
+        // .unwrap()
+        // .to_string()
+    "dupa".into()
 }
 
 pub fn process_part2(input: &str) -> String {
@@ -21,7 +158,6 @@ Valve II has flow rate=0; tunnels lead to valves AA, JJ
 Valve JJ has flow rate=21; tunnel leads to valve II";
 
     #[test]
-    #[ignore = "not implemented"]
     fn part1_works() {
         assert_eq!("1651", process_part1(INPUT));
     }
