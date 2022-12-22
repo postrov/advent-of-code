@@ -34,9 +34,9 @@ fn job(input: &str) -> IResult<&str, Job> {
     ))(input)?;
 
     Ok((input, job))
-} 
+}
 
-fn monkey<'a>(input: &'a str) -> IResult<&str, Monkey<'a>> {
+fn monkey(input: &str) -> IResult<&str, Monkey> {
     let (input, (id, job)) = separated_pair(
         alpha1,
         tag(": "),
@@ -69,7 +69,7 @@ pub fn process_part1(input: &str) -> String {
     );
 
     let root = monkeys.get("root").unwrap();
-    
+
     what_monkey_yells(root, &monkeys)
         .to_string()
 }
@@ -80,25 +80,65 @@ enum Dir {
     Right,
 }
 
-fn find_monkey_path<'a>(id: &str, m: &Monkey, monkeys: &HashMap<&str, Monkey>) -> Option<Vec<Dir>> {
+fn find_monkey_path(id: &str, m: &Monkey, monkeys: &HashMap<&str, Monkey>) -> Option<Vec<Dir>> {
     if m.id == id {
         return Some(vec![]);
-    } 
+    }
 
     match m.job {
-        Job::Yell(_) => None, 
+        Job::Yell(_) => None,
         Job::Operation(left, _, right) => {
             if let Some(mut v) = find_monkey_path(id, monkeys.get(left).unwrap(), monkeys) {
                 v.push(Dir::Left);
                 return Some(v);
             }
-            
+
             if let Some(mut v) = find_monkey_path(id, monkeys.get(right).unwrap(), monkeys) {
                 v.push(Dir::Right);
                 return Some(v);
             }
             None
         },
+    }
+}
+
+fn what_monkey_needs_to_yell(m: &Monkey, path: &[Dir], wanted: i64, monkeys: &HashMap<&str, Monkey>) -> i64 {
+    if path.is_empty() {
+        return wanted;
+    }
+
+    let search_dir = &path[0];
+    let new_path = &path[1..];
+    let m = monkeys.get(m.id).unwrap();
+    if let Job::Operation(left, op, right) = &m.job {
+        let right = monkeys.get(right).unwrap();
+        let left = monkeys.get(left).unwrap();
+
+        match search_dir {
+            Dir::Left => {
+                let known = what_monkey_yells(right, monkeys);
+                let new_wanted = match op {
+                    Op::Add => wanted - known,
+                    Op::Div => wanted * known,
+                    Op::Mul => wanted / known,
+                    Op::Sub => wanted + known,
+                };
+                what_monkey_needs_to_yell(left, new_path, new_wanted, monkeys)
+            }
+            Dir::Right => {
+                let known = what_monkey_yells(left, monkeys);
+                let new_wanted = match op {
+                    Op::Add => wanted - known,
+                    Op::Div => known / wanted,
+                    Op::Mul => wanted / known,
+                    Op::Sub => known - wanted,
+                };
+                what_monkey_needs_to_yell(right, new_path, new_wanted, monkeys)
+            }
+        }
+
+    } else {
+        -31337 // unreachable
     }
 }
 
@@ -110,12 +150,24 @@ pub fn process_part2(input: &str) -> String {
 
     let root = monkeys.get("root").unwrap();
     if let Job::Operation(left, _, right) = root.job {
-        let mut path = find_monkey_path("humn", &root, &monkeys).unwrap();
+        let mut path = find_monkey_path("humn", root, &monkeys).unwrap();
+        let right = monkeys.get(right).unwrap();
+        let left = monkeys.get(left).unwrap();
         path.reverse();
-        dbg!(&path);
-       // todo: which subtree is humn part of? 
+        let p0 = &path[0];
+        match p0 {
+            Dir::Left => {
+                let wanted = what_monkey_yells(right, &monkeys);
+                what_monkey_needs_to_yell(left, &path[1..], wanted, &monkeys)
+            }
+            Dir::Right => {
+                let wanted = what_monkey_yells(left, &monkeys);
+                what_monkey_needs_to_yell(right, &path[1..], wanted, &monkeys)
+            }
+        }.to_string()
+    } else {
+        unreachable!() // unreachable with proper input
     }
-    "x".into()
 }
 
 #[cfg(test)]
