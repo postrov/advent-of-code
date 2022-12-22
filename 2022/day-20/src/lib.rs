@@ -12,6 +12,17 @@ pub fn process_part1(input: &str) -> String {
 
     // let uniq: BTreeSet<i32> = BTreeSet::from_iter(nums.iter().copied());
     // dbg!(uniq.len()); // not unique
+    
+    // let v = vec![1, 2, -3, 4, 0, 3, -2];
+    // let l = v.len();
+    // let pos0 = 4;
+    // dbg!(v[(pos0 + 1000) % l]);
+    // dbg!(v[(pos0 + 2000) % l]);
+    // dbg!(v[(pos0 + 3000) % l]); // 4, -3, 2 => correct
+
+    // challenge 1: how to know which number is next after move?
+    // challenge 2: efficiently shift numbers
+
     "x".into()
 }
 
