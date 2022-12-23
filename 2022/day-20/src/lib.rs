@@ -39,10 +39,12 @@ fn get_coords_output(v: &[(usize, i32)]) -> String {
 
     [1000, 2000, 3000].iter()
         .map(|coord_pos| v[(coord_pos + pos0) % size].1)
+        .inspect(|num| println!("coord: {}", num))
         .sum::<i32>()
         .to_string()
 }
 
+// expected answer for part1: 7713, actual 15744
 pub fn process_part1(input: &str) -> String {
     let nums = input.split('\n')
         .filter_map(|l| l.parse::<i32>().ok())
@@ -63,12 +65,15 @@ pub fn process_part1(input: &str) -> String {
     get_coords_output(&v)
 }
 
+// expected answer for part2: 1664569352803
 pub fn process_part2(input: &str) -> String {
     input.into()
 }
 
 #[cfg(test)]
 mod tests {
+    use std::fs;
+
     use super::*;
     const INPUT: &str = "1
 2
@@ -125,6 +130,29 @@ mod tests {
         shift_pos(&mut v, 0, size);
         let result = v.iter().map(|(_p, n)| *n).collect::<Vec<_>>();
         assert_eq!(vec![2, -2, 3, 4], result);
+    }
+
+    #[test]
+    fn real_part1_test() {
+        let file = fs::read_to_string("./input.txt").unwrap();
+        let mut nums = file.split('\n')
+            .filter_map(|l| l.parse::<i32>().ok())
+            .collect::<Vec<i32>>();
+        // let uniq: BTreeSet<i32> = BTreeSet::from_iter(nums.iter().copied());
+        let mut v = nums.iter()
+            .copied()
+            .enumerate()
+            .collect::<Vec<(usize, i32)>>();
+
+        let size = v.len() as i32;
+        for i in 0..size {
+            let pos = v.iter().position(|(p, _)| *p == i as usize).unwrap();
+            shift_pos(&mut v, pos, size);
+        }
+        let mut result = v.iter().map(|(_p, n)| *n).collect::<Vec<_>>();
+        result.sort();
+        nums.sort();
+        assert_eq!(nums, result);
     }
 
     #[test]
