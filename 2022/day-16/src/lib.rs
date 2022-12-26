@@ -33,6 +33,14 @@ fn node(input: &str) -> IResult<&str, Node> {
 }
 
 type Vertex<'a> = (&'a str, u32);
+type DistanceMap<'a> = HashMap<Vertex<'a>, HashMap<Vertex<'a>, i32>>; 
+
+fn get_move_time(distances: &DistanceMap, a: &Vertex, b: &Vertex) -> i32 {
+    distances
+        .get(a)
+        .and_then(|distance_from_a| distance_from_a.get(b).copied())
+        .unwrap()
+}
 
 pub fn process_part1(input: &str) -> String {
     let (_input, node_list) = separated_list1(line_ending, node)(input).unwrap();
@@ -74,7 +82,7 @@ pub fn process_part1(input: &str) -> String {
         start_and_pos.append(&mut pos_vertices.clone());
         start_and_pos
     };
-    let mut dist: HashMap<Vertex, HashMap<Vertex, i32>> = HashMap::new();
+    let mut distances: DistanceMap = HashMap::new();
 
     sources.iter().for_each(|s| {
         let mut res = dijkstra(
@@ -88,7 +96,7 @@ pub fn process_part1(input: &str) -> String {
             .for_each(|v| {
                 res.remove(v);
             });
-        dist.insert(*s, res);
+        distances.insert(*s, res);
     });
 
     // let p = vec![&("DD", 20), &("BB", 13), &("JJ", 21), &("HH", 22), &("EE", 3), &("CC", 2)];
@@ -102,10 +110,7 @@ pub fn process_part1(input: &str) -> String {
             if action.is_none() {
                 action = pi.next()
                     .map(|&v| {
-                        let move_time = *dist
-                            .get(&cur_pos)
-                            .and_then(|d| d.get(v))
-                            .unwrap();
+                        let move_time = get_move_time(&distances, &cur_pos, v);
                         (move_time, *v)
                     });
             }
@@ -125,10 +130,7 @@ pub fn process_part1(input: &str) -> String {
                     // total_rate += v.1;
                     action = pi.next()
                         .map(|&v| {
-                            let move_time = *dist
-                                .get(&cur_pos)
-                                .and_then(|d| d.get(v))
-                                .unwrap();
+                            let move_time = get_move_time(&distances, &cur_pos, v);
                             (move_time - 1, *v)
                         });
                     // action = None;
@@ -138,7 +140,6 @@ pub fn process_part1(input: &str) -> String {
                     action = Some((move_time - 1, v));
                 },
                 None => {
-
                 }
             };
         }
