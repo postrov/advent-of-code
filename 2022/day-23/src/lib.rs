@@ -1,5 +1,7 @@
 use std::{collections::{BTreeSet, BTreeMap}, ops::Add};
 
+use itertools::Itertools;
+
 #[derive(PartialEq, Eq, PartialOrd, Ord, Debug, Copy, Clone)]
 struct Point {
     x: i32,
@@ -69,7 +71,6 @@ fn free_space(elves: &BTreeSet<Point>) -> i32 {
 
 fn display_map(elves: &BTreeSet<Point>) {
     let (xmin, ymin, xmax, ymax) = bounding_box(elves);
-    println!("-------------------------");
     for y in ymin..=ymax {
         for x in xmin..=xmax {
             let c = if elves.contains(&Point {x, y}) {
@@ -83,50 +84,78 @@ fn display_map(elves: &BTreeSet<Point>) {
     }
 }
 
-pub fn process_part1(input: &str) -> String {
-    let check_directions = [
+const CHECK_DIRECTIONS: [[(i32, i32); 3]; 4] = 
+    [
         [(0, -1), (-1, -1), (1, -1)], // N, NE, NW
         [(0, 1), (-1, 1), (1, 1)], // S, SE, SW
         [(-1, 0), (-1, -1), (-1, 1)], // W, NW, SW
         [(1, 0), (1, -1), (1, 1)], // E, NE, SE
     ];
-    let mut elves = parse_input(input);
-    display_map(&elves);
-    for round in 0..10 {
-        let mut destinations: BTreeMap<Point, Vec<Point>> = BTreeMap::new();
-        let mut new_elves = BTreeSet::new();
-        elves.iter()
-            .for_each(|elf| {
-                find_valid_move(elf, &elves, &check_directions, round)
+
+fn should_look_for_move(elf: &Point, elves: &BTreeSet<Point>) -> bool {
+    (-1..=1)
+        .cartesian_product(-1..=1)
+        .filter(|(x, y)| *x != 0 || *y != 0)
+        .map(|(x, y)| *elf + (x, y))
+        .any(|point| elves.contains(&point))
+}
+
+fn process_round(elves: &mut BTreeSet<Point>, round: usize) -> bool {
+    let mut destinations: BTreeMap<Point, Vec<Point>> = BTreeMap::new();
+    let mut new_elves = BTreeSet::new();
+    elves.iter()
+        .for_each(|elf| {
+// todo rethink this overcomplicated flow:
+            if should_look_for_move(elf, elves) {
+                find_valid_move(elf, elves, &CHECK_DIRECTIONS, round)
                     .map(|dst| {
-                       destinations.entry(dst)
+                        destinations.entry(dst)
                             .or_default()
                             .push(*elf);
                     })
                     .unwrap_or_else(|| {
                         new_elves.insert(*elf);
                     });
-            });
-        destinations.into_iter()
-            .for_each(|(dst, candidates)| {
-                if candidates.len() == 1 {
-                    new_elves.insert(dst);
-                } else {
-                    candidates.into_iter()
-                        .for_each(|c| {
-                            new_elves.insert(c);
-                        });
-                }
-            });
-        display_map(&new_elves);
-        elves = new_elves;
+            } else {
+                new_elves.insert(*elf);
+            }
+        });
+    let no_elf_moved = destinations.is_empty();
+    destinations.into_iter()
+        .for_each(|(dst, candidates)| {
+            if candidates.len() == 1 {
+                new_elves.insert(dst);
+            } else {
+                candidates.into_iter()
+                    .for_each(|c| {
+                        new_elves.insert(c);
+                    });
+            }
+        });
+    *elves = new_elves;
+    no_elf_moved
+}
+
+pub fn process_part1(input: &str) -> String {
+    let mut elves = parse_input(input);
+    println!("==== Initial state:");
+    display_map(&elves);
+    for round in 0..10 {
+        process_round(&mut elves, round);
+        println!("==== Round {}:", round + 1);
+        display_map(&elves);
     }
 
     free_space(&elves).to_string()
 }
 
 pub fn process_part2(input: &str) -> String {
-    input.into()
+    let mut elves = parse_input(input);
+    let mut round = 0;
+    while !process_round(&mut elves, round) {
+        round += 1;
+    }
+    (round + 1).to_string()
 }
 
 #[cfg(test)]
@@ -146,8 +175,7 @@ mod tests {
     }
 
     #[test]
-    #[ignore = "not implemented"]
     fn part2_works() {
-        assert_eq!("works", process_part2(INPUT));
+        assert_eq!("20", process_part2(INPUT));
     }
 }
