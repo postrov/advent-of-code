@@ -1,4 +1,4 @@
-use std::{collections::BTreeSet, ops::Add};
+use std::{collections::{BTreeSet, BTreeMap}, ops::Add};
 
 #[derive(PartialEq, Eq, PartialOrd, Ord, Debug)]
 struct Point {
@@ -38,7 +38,6 @@ fn parse_input(input: &str) -> BTreeSet<Point> {
 }
 
 pub fn process_part1(input: &str) -> String {
-    // let elves = parse_input(input);
     let check_directions = 
     [
         [(0, -1), (-1, -1), (1, -1)], // N, NE, NW
@@ -47,8 +46,10 @@ pub fn process_part1(input: &str) -> String {
         [(1, 0), (1, -1), (1, 1)], // E, NE, SE
 
     ];
+    []
+    let elves = parse_input(input);
     // on each step dest point -> list of elves trying to move into it
-    let x: BTreeMap<Point, Vec<Point>> = new BTreeMap();
+    let x: BTreeMap<Point, Vec<Point>> = BTreeMap::new();
     // for each elf, consider movement options, pick first available from check_directions
     //   insert or append into x
     
@@ -56,7 +57,7 @@ pub fn process_part1(input: &str) -> String {
     //   if entry has 1 value, put key in new map
     //   if entry has more than 1 value, put all values in new map
 
-    // cycle change directions (modulo)
+    // cycle change directions
 
     dbg!(&elves);
     "N/A".into()
