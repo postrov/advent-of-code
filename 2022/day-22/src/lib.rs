@@ -144,6 +144,35 @@ pub fn process_part1(input: &str) -> String {
     (1000 * (y + 1) + 4 * (x + 1) + heading).to_string()
 }
 
+//         1111
+//         1111
+//         1111
+//         1111
+// 222233334444
+// 222233334444
+// 222233334444
+// 222233334444
+//         55556666
+//         55556666
+//         55556666
+//         55556666
+//
+// let's define a rotation, possible when there's gap in direction of a move, and then something 90 degree next to it, e.g.
+//   rotation(direction of movement, direction from empty space to next square (not turn))
+//   - from 6 to 4 -> rotation(UP, LEFT)    -> (x, 0) becomes (n - 1, n - 1 - x)
+//   - from 4 to 6 -> rotation(RIGHT, DOWN) -> (n - 1, y) becomes (n - 1 - y, 0)
+//   - from 3 to 5 -> rotation(DOWN, RIGHT) -> (x, n - 1) becomes (0, n - 1 - x)
+//   - from 5 to 3 -> rotation(LEFT, UP)    -> (0, y) becomes (n - 1 - y, n - 1)
+//   - from 3 to 1 -> rotation(UP, RIGHT)   -> (x, 0) becomes (0, x)
+//   - from 1 to 3 -> rotation(LEFT, DOWN)  -> (0, y) becomes (y, 0)
+//   -             -> rotation(RIGHT, UP)   -> (n - 1, y) becomes (y, n - 1)
+//   -             -> rotation(DOWN, LEFT)  -> (x, n - 1) becomes (n - 1, x)
+//
+// another model to consider:
+//   - translate x, y into face number (1 to 6)
+//   - find out transitions from each face in UP, DOWN, LEFT, RIGHT directions
+//   - each transition is: (target face, translate_x fn, translate_y fn, new heading)
+//   - find out when crossing face boundary, and apply appropriate transition to 
 
 pub fn process_part2(input: &str) -> String {
     input.into()
