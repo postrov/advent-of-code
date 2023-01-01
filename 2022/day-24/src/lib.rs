@@ -8,9 +8,9 @@
 // 64 -> entry
 // 128 -> exit
 
-use std::{fmt::Display, str::FromStr};
+use std::{fmt::Display, str::FromStr, iter::repeat};
 
-// use nom::{multi::{separated_list1, many1}, character::complete::{line_ending, one_of}};
+use pathfinding::prelude::astar;
 
 #[allow(unused)]
 const EMPTY: u8 = 0;
@@ -103,13 +103,6 @@ impl Map {
         self.field.get(self.to_idx(x, y)).copied()
     }
 
-    // fn set_xy(&mut self, x: usize, y: usize, value: u8) {
-    //     let idx = self.to_idx(x, y);
-    //     if let Some(v) = self.field.get_mut(idx) {
-    //         *v = value;
-    //     }
-    // }
-
     fn or_xy(&mut self, x: usize, y: usize, bits: u8) {
         let idx = self.to_idx(x, y);
         if let Some(v) = self.field.get_mut(idx) {
@@ -181,23 +174,27 @@ impl FromStr for Map {
     }
 }
 
+#[derive(Hash, Eq, PartialEq, Clone, Copy)]
 struct State {
     map_variant: usize,
     elf_x: usize,
     elf_y: usize,
-    steps: usize,
 }
 
 impl State {
-    fn bound(&self, exit: (usize, usize)) -> usize {
-        // manhattan distance
-        self.elf_x.abs_diff(exit.0) + self.elf_y.abs_diff(exit.1) + self.steps
+    fn success(&self, goal: (usize, usize)) -> bool {
+        self.elf_x == goal.0 && self.elf_y == goal.1
     }
 
-    fn branch(&self, maps: &[Map]) -> Vec<Self> {
+    fn heuristic(&self, goal: (usize, usize)) -> u32 {
+        // manhattan distance
+        let dist = self.elf_x.abs_diff(goal.0) + self.elf_y.abs_diff(goal.1);
+        dist as u32
+    }
+
+    fn successors(&self, maps: &[Map]) -> Vec<(Self, u32)> {
         let map_variant = (self.map_variant + 1) % maps.len();
         let next_map = &maps[map_variant];
-        let steps = self.steps + 1;
 
         let mut possible_moves = Vec::new(); 
         let x = self.elf_x;
@@ -225,13 +222,31 @@ impl State {
                 map_variant,
                 elf_x: x,
                 elf_y: y,
-                steps,
             })
+            .zip(repeat(1))
             .collect()
     }
 }
 
-pub fn process_part1(input: &str) -> String {
+fn shortest_path(start: (usize, usize), goal: (usize, usize), time: usize, maps: &[Map]) -> u32 {
+    let state = State {
+        map_variant: time,
+        elf_x: start.0,
+        elf_y: start.1,
+    };
+    let res = astar(&state, |s| s.successors(maps), |s| s.heuristic(goal), |s| s.success(goal));
+    let (_path, len) = res.expect("No path could be found!");
+    len 
+}
+
+type Point = (usize, usize);
+struct ProcessedInput {
+    start: Point,
+    exit: Point,
+    maps: Vec<Map>,
+}
+
+fn process_input(input: &str) -> ProcessedInput {
     let mut map = input.parse::<Map>().unwrap();
     let possible_state_num = (map.dx - 2) * (map.dy - 2); // todo: lcm
     let mut maps = Vec::with_capacity(possible_state_num);
@@ -242,35 +257,34 @@ pub fn process_part1(input: &str) -> String {
         map = after_minute;
     }
 
-    let elf_x = map.field.iter().position(|&b| b == EMPTY).unwrap();
+    let start_x = map.field.iter().position(|&b| b == EMPTY).unwrap();
+    let start_y = 0;
     let exit_y = map.dy - 1;
     let exit_x = map.field[(exit_y * map.dx)..].iter().position(|&b| b == EMPTY).unwrap();
+    let start = (start_x, start_y);
+    let exit = (exit_x, exit_y);
 
-    let mut queue = vec![State {
-        map_variant: 0,
-        elf_x,
-        elf_y: 0,
-        steps: 0,
-    }];
-
-    let mut best = usize::MAX;
-    while let Some(state) = queue.pop() {
-        if state.elf_y == map.dy - 1 {
-            best = best.min(state.steps);
-        }
-
-        if state.bound((exit_x, exit_y)) < best {
-            state.branch(&maps).into_iter()
-                .for_each(|s| queue.push(s))
-        }
+    ProcessedInput {
+        start,
+        exit,
+        maps
     }
+}
 
-    // "N/A".into()
-    best.to_string()
+pub fn process_part1(input: &str) -> String {
+    let ProcessedInput { start, exit, maps } = process_input(input);
+    let len = shortest_path(start, exit, 0, &maps);
+    len.to_string()
 }
 
 pub fn process_part2(input: &str) -> String {
-    input.into()
+    let ProcessedInput { start, exit, maps } = process_input(input);
+
+    let there = shortest_path(start, exit, 0, &maps);
+    let back = shortest_path(exit, start, there as usize, &maps);
+    let there_again = shortest_path(start, exit, (there + back) as usize, &maps);
+
+    (there + back + there_again).to_string()
 }
 
 #[cfg(test)]
@@ -285,12 +299,11 @@ mod tests {
 
     #[test]
     fn part1_works() {
-        assert_eq!("works", process_part1(INPUT));
+        assert_eq!("18", process_part1(INPUT));
     }
 
     #[test]
-    #[ignore = "not implemented"]
     fn part2_works() {
-        assert_eq!("works", process_part2(INPUT));
+        assert_eq!("54", process_part2(INPUT));
     }
 }
